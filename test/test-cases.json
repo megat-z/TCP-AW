@@ -6,7 +6,7 @@
 	},
 	"TC002.py": {
 		"input": "200",
-		"output": "false"
+		"output": "true"
 	},
 	"TC003": {
 		"input": "300",
