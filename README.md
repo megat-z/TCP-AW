@@ -10,10 +10,11 @@ Follow these instructions to set up the full workflow from forking to automated 
 
 ---
 
-### 1. **Fork This Repository**
+### 1. **Use This Template**
 
-- Click the "Fork" button on the top-right of the repo page.
-- (optional) `git clone` and push to a new repository.
+- Click the [**Use this template**](https://github.com/new?template_name=TCP-AW&template_owner=megat-z) button at the top-right of this repository page to create a new repository based on this template.
+- *(Optional)* Alternatively, click the **Fork** button to create a fork of this repository under your account.
+- *(Optional)* You can also `git clone` this repository and push it to a new repository if you prefer manual setup.
 
 ---
 
