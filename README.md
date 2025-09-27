@@ -14,7 +14,7 @@ Follow these instructions to set up the full workflow from forking to automated 
 
 - Click the "Fork" button on the top-right of the repo page.
 - Select your GitHub account.
-- Clone your fork locally (optional).
+  or `git clone` to push to a new repository (optional).
 
 ---
 
