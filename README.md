@@ -72,6 +72,10 @@ Follow these instructions to set up the full workflow from forking to automated 
 
 - Modify or add test cases in `test/test-cases.json` as needed.
 - Each commit or push to this file will trigger the workflow.
+- After each commit to `test-cases.json`, check these files:
+  - `test/string-distances/input.json`
+  - `test/string-distances/output.json`
+- These contain normalized string distance matrices for inputs and outputs.
 
 ---
 
@@ -87,17 +91,18 @@ Follow these instructions to set up the full workflow from forking to automated 
 
 - Place your main project code at the repository root or as desired.
 - Add individual test case scripts in the `test/test-scripts/` directory.  
-  - Each file should match the naming or script property in your `test-cases.json`.
+- Each file should match the naming or script property in your `test-cases.json`.
 
 ---
 
 ### 10. **Review Fault Matrices on Each Commit**
 
-- After each commit to `test-cases.json`, check these files:
-  - `test/string-distances/input.json`
-  - `test/string-distances/output.json`
-- These contain normalized string distance matrices for inputs and outputs.
-- Use them to analyze coverage and prioritization effectiveness.
+- Any other commit is will:
+  - Read from `fault-matrices` folder (if any)
+  - Print (log/output) the prioritization order for test execution.
+  - Start executing the test scripts as listed in `test-cases.json`, following the predicted prioritization order.
+  - Record and update fault detection results in a new versioned matrix (e.g., `vN+1.json`).
+  - This enables continuous prioritization and APFD tracking as your codebase evolves.
 
 ---
 
@@ -107,7 +112,8 @@ Follow these instructions to set up the full workflow from forking to automated 
 2. Webhook triggers Google Apps Script, which dispatches to GitHub Actions.
 3. GitHub Actions runs `setup.py`, computes distance matrices, and updates results.
 4. Review matrices and workflow status in the Actions tab.
-5. Iterate and improve test coverage and prioritization.
+5. **On non-`test-cases.json` commits, automated test prioritization and execution occurs, updating and logging fault detection matrices (`vN.json`).**
+6. Iterate and improve test coverage and prioritization.
 
 ---
 
@@ -121,6 +127,8 @@ Follow these instructions to set up the full workflow from forking to automated 
   Add missing scripts to `test/test-scripts/` or update `test-cases.json` accordingly.
 - **Distance matrices not updating?**  
   Confirm changes are being committed to `test-cases.json`.
+- **Prioritization or execution not running after other commits?**  
+  Check automation logs and ensure prioritization scripts are enabled and reading latest matrices.
 
 ---
 
