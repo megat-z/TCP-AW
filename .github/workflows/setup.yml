@@ -32,13 +32,13 @@ jobs:
           changed_input=false
           changed_output=false
           # Check for changes in input.json
-          if ! git diff --exit-code test/string-distance/input.json; then
-            git add test/string-distance/input.json
+          if ! git diff --exit-code test/string-distances/input.json; then
+            git add test/string-distances/input.json
             changed_input=true
           fi
           # Check for changes in output.json
-          if ! git diff --exit-code test/string-distance/output.json; then
-            git add test/string-distance/output.json
+          if ! git diff --exit-code test/string-distances/output.json; then
+            git add test/string-distances/output.json
             changed_output=true
           fi
           # Commit and push (if any changes were made)
