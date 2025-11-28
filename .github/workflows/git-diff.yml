@@ -1,79 +1,64 @@
 name: Git Diff Extraction
 
 on:
-  repository_dispatch:
-    types: [git-diff]
+    repository_dispatch:
+        types: [git-diff]
 
 jobs:
-  extract-changes:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.client_payload.branch }}
-          # Fetch enough history to skip over potential artifact commits
-          fetch-depth: 20 
+    extract-changes:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
 
-      - name: Extract Git Diff (Smart Search)
-        shell: bash
-        run: |
-          # 1. Define artifacts to ignore
-          # We use pathspec exclusions to ignore automation outputs
-          EXCLUDES=":!dff.txt :!llm.txt :!tca.json :!prioritization_report.md"
-          
-          echo "Searching for the last meaningful source code commit..."
-          
-          TARGET_COMMIT=""
-          
-          # 2. Iteratively check backwards from HEAD (up to 15 commits)
-          for i in {0..15}; do
-            # Ref to check (HEAD, HEAD~1, HEAD~2...)
-            CURRENT_REF="HEAD~$i"
-            
-            # Check if this commit touched any files NOT in the exclude list
-            # 'git log -1 ...' lists changed files. If output is non-empty, it's a source commit.
-            CHANGES=$(git log -1 --format="" --name-only $CURRENT_REF -- . $EXCLUDES)
-            
-            if [ -n "$CHANGES" ]; then
-              echo "✅ Found source code changes at: $CURRENT_REF"
-              TARGET_COMMIT=$CURRENT_REF
-              break
-            else
-              echo "⏭️  Commit $CURRENT_REF appears to be an artifact update. Skipping..."
-            fi
-          done
-          
-          # 3. Generate Diff
-          if [ -z "$TARGET_COMMIT" ]; then
-            echo "⚠️  No source code changes found in recent history."
-            # Create empty file to prevent failure, though logic should prevent this
-            echo "No changes detected" > dff.txt
-          else
-            echo "📝 Extracting diff for commit $TARGET_COMMIT..."
-            # Diff the target commit against its parent, applying the exclusion filter
-            git diff ${TARGET_COMMIT}^ ${TARGET_COMMIT} -- . $EXCLUDES > dff.txt
-          fi
-          
-          echo "Diff size: $(wc -c < dff.txt) bytes"
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.client_payload.branch }}
+                  fetch-depth: 20
 
-      - name: Commit Diff Artifact
-        run: |
-          git config --global user.name 'JTopas Automation'
-          git config --global user.email 'automation@jtopas.local'
-          
-          git add dff.txt
-          
-          # Only commit if dff.txt actually changed to avoid empty commits
-          if git diff --staged --quiet; then
-            echo "No changes to dff.txt. Skipping commit."
-          else
-            git commit -m "chore: update dff.txt [skip ci]"
-            
-            # ROBUSTNESS: Pull with rebase to handle any race conditions before pushing
-            git pull origin ${{ github.event.client_payload.branch }} --rebase
-            git push origin ${{ github.event.client_payload.branch }}
-          fi
+            - name: Extract Git Diff (Benchmark Search)
+              shell: bash
+              run: |
+                  # 1. Search for the specific benchmark commits
+                  echo "Searching history for 'Commit 1' or 'Commit 2'..."
+
+                  TARGET_COMMIT=""
+
+                  for i in {0..19}; do
+                    # Get the commit message subject for HEAD~i
+                    MSG=$(git log -1 --format="%s" HEAD~$i)
+                    
+                    if [[ "$MSG" == "Commit 1" || "$MSG" == "Commit 2" ]]; then
+                      echo "✅ Found benchmark checkpoint at HEAD~$i: '$MSG'"
+                      TARGET_COMMIT="HEAD~$i"
+                      break
+                    fi
+                  done
+
+                  # 2. Generate Diff or Fail
+                  if [ -z "$TARGET_COMMIT" ]; then
+                    echo "⚠️  Could not find 'Commit 1' or 'Commit 2' in the last 20 commits."
+                    echo "No benchmark commit found" > dff.txt
+                  else
+                    echo "📝 Extracting diff for commit $TARGET_COMMIT..."
+                    # We exclude artifact files just in case, but primarily rely on the specific commit selection
+                    git diff ${TARGET_COMMIT}^ ${TARGET_COMMIT} -- . ':!dff.txt' ':!llm.txt' ':!tca.json' ':!prioritization_report.md' > dff.txt
+                  fi
+
+                  echo "Diff size: $(wc -c < dff.txt) bytes"
+
+            - name: Commit Diff Artifact
+              run: |
+                  git config --global user.name 'JTopas Automation'
+                  git config --global user.email 'automation@jtopas.local'
+
+                  git add dff.txt
+
+                  if git diff --staged --quiet; then
+                    echo "No changes to dff.txt. Skipping commit."
+                  else
+                    git commit -m "chore: update dff.txt [skip ci]"
+                    git pull origin ${{ github.event.client_payload.branch }} --rebase
+                    git push origin ${{ github.event.client_payload.branch }}
+                  fi
